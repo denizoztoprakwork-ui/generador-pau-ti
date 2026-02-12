@@ -222,6 +222,7 @@ meta = {"title": title, "subject": subject, "year": year}
 with col1:
     if st.button("Genera examen (PDF)"):
         try:
+try:
     exam = generate_exam(
         bank,
         seed=seed if seed_mode == "Fixar seed" else random.randint(0, 999999),
@@ -229,9 +230,10 @@ with col1:
         option_points=float(option_points),
         meta=meta
     )
-except ValueError as e:
-    st.error("⚠️ No hi ha prou preguntes al banc per generar aquest examen.")
+except ValueError:
+    st.error("⚠️ No hi ha prou preguntes al banc.")
     st.stop()
+
 
         pdf_bytes = build_exam_pdf_bytes(exam)
         st.download_button("⬇️ Descarrega examen.pdf", data=pdf_bytes, file_name="examen_pau.pdf", mime="application/pdf")
