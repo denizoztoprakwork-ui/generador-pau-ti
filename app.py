@@ -1,249 +1,212 @@
-import io
 import random
-import yaml
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Dict, Set
+
 import streamlit as st
-
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, ListFlowable, ListItem
+import yaml
 
 
-# ---------- Utils: load bank ----------
-@st.cache_data
-def load_bank(path: str = "bank.yml") -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    if not data or "questions" not in data:
-        raise ValueError("bank.yml ha de contenir una clau 'questions'.")
-    return data
+# -----------------------------
+# Model i utilitats
+# -----------------------------
+@dataclass(frozen=True)
+class Question:
+    id: str
+    statement: str
+    topic: str
+    difficulty: str  # "facil" | "mitja" | "dificil"
+    answer: str
 
 
-# ---------- Exam generation ----------
-def pick_questions(bank: dict, rng: random.Random, n_exercises: int, avoid_ids: set[str]) -> list[dict]:
-    candidates = [q for q in bank["questions"] if q["id"] not in avoid_ids]
-    rng.shuffle(candidates)
+def load_bank_yml(path: str) -> List[Question]:
+    p = Path(path)
+    if not p.exists():
+        raise ValueError(f"No trobo el fitxer del banc: {p}")
 
-    picked = []
-    used_topics = set()
+    try:
+        data = yaml.safe_load(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise ValueError(f"El fitxer {p} no és un YAML vàlid: {e}") from e
 
-    for q in candidates:
-        if len(picked) >= n_exercises:
-            break
-        topic = q.get("topic", "general")
-        # preferim no repetir tema mentre es pugui
-        if topic in used_topics and len(used_topics) < min(3, n_exercises):
-            continue
-        picked.append({**q})
-        used_topics.add(topic)
+    if not isinstance(data, list):
+        raise ValueError("El banc ha de ser una llista (YAML) de preguntes.")
 
-    # fallback
-    if len(picked) < n_exercises:
-        for q in candidates:
-            if len(picked) >= n_exercises:
-                break
-            if q["id"] in {p["id"] for p in picked}:
-                continue
-            picked.append({**q})
+    seen: Set[str] = set()
+    out: List[Question] = []
 
-    if len(picked) < n_exercises:
-        raise ValueError("No hi ha prou preguntes al banc per crear l'examen.")
-    return picked
+    for i, item in enumerate(data, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"Pregunta #{i} no és un objecte YAML (hauria de ser un mapa).")
 
+        for k in ("id", "statement", "topic", "difficulty", "answer"):
+            if k not in item:
+                raise ValueError(f"Pregunta #{i} no té el camp obligatori '{k}'.")
 
-def round_quarter(x: float) -> float:
-    return round(x * 4) / 4
+        qid = str(item["id"]).strip()
+        if not qid:
+            raise ValueError(f"Pregunta #{i} té 'id' buit.")
+        if qid in seen:
+            raise ValueError(f"ID duplicat al banc: '{qid}'.")
+        seen.add(qid)
 
+        out.append(
+            Question(
+                id=qid,
+                statement=str(item["statement"]).strip(),
+                topic=str(item["topic"]).strip(),
+                difficulty=str(item["difficulty"]).strip().lower(),
+                answer=str(item["answer"]).strip(),
+            )
+        )
 
-def allocate_points(option_questions: list[dict], rng: random.Random, total: float) -> list[dict]:
-    n = len(option_questions)
-    base = total / n
-    weights = [base] * n
-
-    # petit ajust aleatori perquè no sigui sempre idèntic
-    if n >= 2:
-        delta = min(0.5, base * 0.25)
-        i, j = 0, 1
-        shift = rng.uniform(-delta, delta)
-        weights[i] += shift
-        weights[j] -= shift
-
-    weights = [round_quarter(w) for w in weights]
-    diff = total - sum(weights)
-    weights[-1] = round_quarter(weights[-1] + diff)
-
-    for q, pts in zip(option_questions, weights):
-        q["points"] = pts
-        parts = q.get("parts") or []
-        if not parts:
-            q["parts"] = [{"text": q.get("statement", ""), "points": pts}]
-            continue
-
-        per = round_quarter(pts / len(parts))
-        acc = per * (len(parts) - 1)
-        last = round_quarter(pts - acc)
-
-        for idx, p in enumerate(parts):
-            p["points"] = per if idx < len(parts) - 1 else last
-
-    return option_questions
+    if not out:
+        raise ValueError("El banc està buit.")
+    return out
 
 
-def generate_exam(bank: dict, seed: int | None, n_exercises: int, option_points: float, meta: dict) -> dict:
+def filter_bank(bank: List[Question], topic: str, difficulty: str) -> List[Question]:
+    candidates = bank
+    if topic != "Tots":
+        candidates = [q for q in candidates if q.topic == topic]
+    if difficulty != "Totes":
+        candidates = [q for q in candidates if q.difficulty == difficulty.lower()]
+    return candidates
+
+
+def pick_questions(candidates: List[Question], rng: random.Random, n: int, avoid_ids: Set[str]) -> List[Question]:
+    pool = [q for q in candidates if q.id not in avoid_ids]
+    if len(pool) < n:
+        raise ValueError(
+            "No hi ha prou preguntes al banc per crear l'examen.\n"
+            f"Disponibles després de filtres i evitant repetits: {len(pool)}\n"
+            f"Necessàries: {n}\n"
+            f"Preguntes evitades: {len(avoid_ids)}"
+        )
+    return rng.sample(pool, n)
+
+
+def generate_exam(
+    candidates: List[Question],
+    seed: int,
+    n_exercises: int,
+    make_two_versions: bool,
+    allow_repeat_between_versions: bool,
+) -> Dict[str, List[Question]]:
+    if n_exercises <= 0:
+        raise ValueError("El nombre d'exercicis ha de ser > 0.")
+    if not candidates:
+        raise ValueError("Amb aquests filtres no hi ha cap pregunta disponible.")
+
     rng = random.Random(seed)
 
-    option_a = pick_questions(bank, rng, n_exercises=n_exercises, avoid_ids=set())
-    used = {q["id"] for q in option_a}
-    option_b = pick_questions(bank, rng, n_exercises=n_exercises, avoid_ids=used)
+    if not make_two_versions:
+        a = pick_questions(candidates, rng, n_exercises, avoid_ids=set())
+        return {"A": a}
 
-    option_a = allocate_points(option_a, rng, total=option_points)
-    option_b = allocate_points(option_b, rng, total=option_points)
+    # Si NO es repeteixen entre A i B, en calen el doble
+    needed = n_exercises if allow_repeat_between_versions else 2 * n_exercises
+    if len(candidates) < needed:
+        raise ValueError(
+            "No hi ha prou preguntes per fer dues versions (A i B) amb aquesta configuració.\n"
+            f"Disponibles (després de filtres): {len(candidates)}\n"
+            f"Necessàries: {needed}\n"
+            f"(n_exercises={n_exercises}, repetir entre A i B={'sí' if allow_repeat_between_versions else 'no'})"
+        )
 
-    return {
-        "meta": {**meta, "seed": seed, "option_points": option_points},
-        "instructions": [
-            "Trieu UNA de les dues opcions (A o B).",
-            "Responeu tots els apartats de l’opció escollida.",
-            "Justifiqueu els càlculs i les respostes. La presentació i la claredat es valoraran.",
-        ],
-        "options": {"A": option_a, "B": option_b},
-    }
+    used: Set[str] = set()
+    a = pick_questions(candidates, rng, n_exercises, avoid_ids=used)
+    used.update(q.id for q in a)
 
+    avoid_for_b = set() if allow_repeat_between_versions else used
+    b = pick_questions(candidates, rng, n_exercises, avoid_ids=avoid_for_b)
 
-# ---------- PDF rendering ----------
-def styles():
-    s = getSampleStyleSheet()
-    s.add(ParagraphStyle(name="TitleBig", parent=s["Title"], fontSize=16, leading=18, spaceAfter=6))
-    s.add(ParagraphStyle(name="Meta", parent=s["Normal"], fontSize=10, leading=12, textColor=colors.grey))
-    s.add(ParagraphStyle(name="H2", parent=s["Heading2"], fontSize=12, leading=14, spaceBefore=10, spaceAfter=6))
-    s.add(ParagraphStyle(name="Q", parent=s["Normal"], fontSize=11, leading=14, spaceAfter=4))
-    s.add(ParagraphStyle(name="Part", parent=s["Normal"], fontSize=11, leading=14, leftIndent=10, spaceAfter=2))
-    return s
+    return {"A": a, "B": b}
 
 
-def build_exam_pdf_bytes(exam: dict) -> bytes:
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18*mm, rightMargin=18*mm, topMargin=16*mm, bottomMargin=16*mm)
-    s = styles()
-    story = []
+# -----------------------------
+# Streamlit app
+# -----------------------------
+st.set_page_config(page_title="Generador d'exàmens", page_icon="📝", layout="centered")
+st.title("📝 Generador d'exàmens")
+st.caption("Si falten preguntes, t'ho dirà amb un missatge (no petarà).")
 
-    meta = exam["meta"]
-    story.append(Paragraph(meta["title"], s["TitleBig"]))
-    story.append(Paragraph(f"{meta['subject']} — {meta['year']}", s["Meta"]))
-    if meta.get("seed") is not None:
-        story.append(Paragraph(f"Seed: {meta['seed']}", s["Meta"]))
-    story.append(Spacer(1, 8))
+BANK_PATH = "bank.yml"
 
-    story.append(Paragraph("Instruccions", s["H2"]))
-    instr = [ListItem(Paragraph(t, s["Q"])) for t in exam["instructions"]]
-    story.append(ListFlowable(instr, bulletType="bullet", leftIndent=14))
-    story.append(Spacer(1, 10))
+try:
+    bank = load_bank_yml(BANK_PATH)
+except ValueError as e:
+    st.error(f"Error carregant el banc: {e}")
+    st.stop()
 
-    for opt_key in ["A", "B"]:
-        story.append(Paragraph(f"OPCIÓ {opt_key}", s["H2"]))
-        option = exam["options"][opt_key]
-        for idx, q in enumerate(option, start=1):
-            pts = q.get("points", 0)
-            title = q.get("title", f"Exercici {idx}")
-            story.append(Paragraph(f"{idx}. {title} <font color='grey'>({pts} punts)</font>", s["Q"]))
-
-            stmt = q.get("statement")
-            if stmt:
-                story.append(Paragraph(stmt, s["Q"]))
-
-            parts = q.get("parts", [])
-            for pi, part in enumerate(parts, start=1):
-                ppts = part.get("points", 0)
-                story.append(Paragraph(f"{chr(96+pi)}) {part['text']} <font color='grey'>({ppts} punts)</font>", s["Part"]))
-
-            story.append(Spacer(1, 6))
-
-        if opt_key == "A":
-            story.append(PageBreak())
-
-    doc.build(story)
-    return buf.getvalue()
-
-
-def build_solutions_pdf_bytes(exam: dict) -> bytes:
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18*mm, rightMargin=18*mm, topMargin=16*mm, bottomMargin=16*mm)
-    s = styles()
-    story = []
-
-    meta = exam["meta"]
-    story.append(Paragraph("Solucionari", s["TitleBig"]))
-    story.append(Paragraph(f"{meta['subject']} — {meta['year']}", s["Meta"]))
-    story.append(Spacer(1, 10))
-
-    for opt_key in ["A", "B"]:
-        story.append(Paragraph(f"OPCIÓ {opt_key}", s["H2"]))
-        option = exam["options"][opt_key]
-        for idx, q in enumerate(option, start=1):
-            story.append(Paragraph(f"{idx}. {q.get('title','Exercici')}", s["Q"]))
-            sol = q.get("solution") or "— (sense solució definida al banc) —"
-            story.append(Paragraph(sol, s["Part"]))
-            story.append(Spacer(1, 6))
-        if opt_key == "A":
-            story.append(PageBreak())
-
-    doc.build(story)
-    return buf.getvalue()
-
-
-# ---------- Streamlit UI ----------
-st.set_page_config(page_title="Generador Exàmens PAU (TI)", page_icon="🧾", layout="centered")
-st.title("🧾 Generador d’exàmens estil PAU — Tecnologia Industrial")
-
-bank = load_bank()
+topics = sorted({q.topic for q in bank})
+difficulties = sorted({q.difficulty for q in bank})
 
 with st.sidebar:
     st.header("Configuració")
-    title = st.text_input("Títol", "Prova d’accés a la universitat (PAU)")
-    subject = st.text_input("Matèria", "Tecnologia Industrial")
-    year = st.text_input("Convocatòria / Any", "Model generat")
-    n_exercises = st.number_input("Exercicis per opció", min_value=2, max_value=6, value=3, step=1)
-    option_points = st.number_input("Punts per opció", min_value=5.0, max_value=10.0, value=10.0, step=0.5)
-    seed_mode = st.selectbox("Reproduïbilitat", ["Aleatori", "Fixar seed"])
-    seed = None
-    if seed_mode == "Fixar seed":
-        seed = st.number_input("Seed (enter)", min_value=0, max_value=999999, value=42, step=1)
 
-st.write("Prem el botó i descarrega el PDF. L’examen tindrà **Opció A** i **Opció B** amb puntuacions.")
+    n_exercises = st.number_input("Exercicis per versió", min_value=1, max_value=50, value=5, step=1)
 
-if len(bank["questions"]) < int(n_exercises) * 2:
-    st.warning("El banc té poques preguntes per generar A i B sense repetir. Afegeix més ítems a bank.yml.")
-
-col1, col2 = st.columns(2)
-
-meta = {"title": title, "subject": subject, "year": year}
-
-with col1:
-    if st.button("Genera examen (PDF)"):
-        try:
-try:
-exam = generate_exam(...)
-
-        bank,
-        seed=seed if seed_mode == "Fixar seed" else random.randint(0, 999999),
-        n_exercises=int(n_exercises),
-        option_points=float(option_points),
-        meta=meta
+    make_two_versions = st.checkbox("Crear dues versions (A i B)", value=True)
+    allow_repeat = st.checkbox(
+        "Permetre repetir preguntes entre A i B",
+        value=False,
+        disabled=not make_two_versions
     )
-except ValueError:
-    st.error("⚠️ No hi ha prou preguntes al banc.")
-    st.stop()
 
+    seed_mode = st.selectbox("Seed", ["Aleatori", "Fixar seed"], index=0)
+    seed = st.number_input(
+        "Seed (si és fix)",
+        min_value=0,
+        max_value=999999,
+        value=12345,
+        step=1,
+        disabled=(seed_mode != "Fixar seed"),
+    )
 
-        pdf_bytes = build_exam_pdf_bytes(exam)
-        st.download_button("⬇️ Descarrega examen.pdf", data=pdf_bytes, file_name="examen_pau.pdf", mime="application/pdf")
+    st.divider()
+    topic = st.selectbox("Tema", ["Tots"] + topics, index=0)
+    difficulty = st.selectbox("Dificultat", ["Totes"] + difficulties, index=0)
 
+col1, col2 = st.columns([1, 1])
+with col1:
+    do_generate = st.button("✨ Generar examen", use_container_width=True)
 with col2:
-    if st.button("Genera examen + solucions"):
-        exam = generate_exam(bank, seed=seed if seed_mode == "Fixar seed" else random.randint(0, 999999),
-                             n_exercises=int(n_exercises), option_points=float(option_points), meta=meta)
-        exam_pdf = build_exam_pdf_bytes(exam)
-        sol_pdf = build_solutions_pdf_bytes(exam)
-        st.download_button("⬇️ Descarrega examen.pdf", data=exam_pdf, file_name="examen_pau.pdf", mime="application/pdf")
-        st.download_button("⬇️ Descarrega solucions.pdf", data=sol_pdf, file_name="solucions_pau.pdf", mime="application/pdf")
+    st.download_button(
+        "⬇️ Descarregar banc (YAML)",
+        data=Path(BANK_PATH).read_bytes(),
+        file_name="bank.yml",
+        mime="text/yaml",
+        use_container_width=True,
+    )
+
+if do_generate:
+    chosen_seed = int(seed) if seed_mode == "Fixar seed" else random.randint(0, 999999)
+
+    candidates = filter_bank(bank, topic=topic, difficulty=difficulty)
+
+    try:
+        exam = generate_exam(
+            candidates=candidates,
+            seed=chosen_seed,
+            n_exercises=int(n_exercises),
+            make_two_versions=bool(make_two_versions),
+            allow_repeat_between_versions=bool(allow_repeat),
+        )
+    except ValueError as e:
+        st.error(str(e))
+        st.info("Solucions típiques: baixa el nombre d'exercicis, treu filtres, o permet repetició entre A i B.")
+        st.stop()
+
+    st.success(f"Examen generat ✅ (seed = {chosen_seed})")
+
+    def render_version(name: str):
+        st.subheader(f"Versió {name}")
+        for idx, q in enumerate(exam[name], start=1):
+            with st.expander(f"{idx}. [{q.topic} | {q.difficulty}] {q.id}", expanded=(idx <= 2)):
+                st.markdown(q.statement)
+                st.markdown(f"**Resposta:** {q.answer}")
+
+    render_version("A")
+    if "B" in exam:
+        render_version("B")
