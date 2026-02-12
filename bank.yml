@@ -1,37 +1,59 @@
-questions:
-  - id: elec_ohm_01
-    topic: electricitat
-    title: Circuit resistiu en sèrie
-    statement: "Considereu un circuit amb dues resistències en sèrie."
-    parts:
-      - text: "Per a R1=220 Ω i R2=330 Ω, calculeu la resistència equivalent."
-      - text: "Si s’aplica una tensió de 12 V, calculeu la intensitat del circuit."
-      - text: "Determineu la potència dissipada total."
-    solution: "Req=550 Ω. I=12/550=0,0218 A. P=V·I=0,2616 W."
+- id: Q001
+  statement: "Què és una variable en programació? Escriu una definició breu."
+  topic: "Fonaments"
+  difficulty: "facil"
+  answer: "Una variable és un identificador que referencia un valor emmagatzemat (que pot canviar) durant l'execució."
 
-  - id: mec_trac_01
-    topic: mecanica
-    title: Tracció i deformació
-    statement: "Una barra cilíndrica d’acer està sotmesa a tracció."
-    parts:
-      - text: "Si F=12 kN i el diàmetre és 10 mm, calculeu la tensió σ."
-      - text: "Amb E=210 GPa, estimeu la deformació unitària ε."
-    solution: "A=π(0,01^2)/4=7,85e-5. σ=12000/7,85e-5=153 MPa. ε≈7,3e-4."
+- id: Q002
+  statement: "Dona un exemple de condicional `if` en Python i explica què fa."
+  topic: "Control de flux"
+  difficulty: "facil"
+  answer: "Ex: if x > 0: print('positiu'). Executa el bloc si la condició és certa."
 
-  - id: ctrl_bloc_01
-    topic: sistemes
-    title: Sistema en llaç tancat
-    statement: "Considereu un sistema de control amb retroalimentació unitària."
-    parts:
-      - text: "Expliqueu la funció del comparador i del sensor en un llaç tancat."
-      - text: "Indiqueu dos avantatges d’un sistema amb retroacció respecte d’un en llaç obert."
-    solution: "Comparador: e=r-y. Sensor: mesura y. Avantatges: rebuig pertorbacions i menys sensibilitat a variacions."
+- id: Q003
+  statement: "Quina diferència hi ha entre una llista i una tupla en Python?"
+  topic: "Estructures de dades"
+  difficulty: "mitja"
+  answer: "La llista és mutable; la tupla és immutable."
 
-  - id: mat_fase_01
-    topic: materials
-    title: Corba esforç-deformació
-    statement: "Es mostra (conceptualment) una corba esforç-deformació d’un metall dúctil."
-    parts:
-      - text: "Definiu límit elàstic i zona plàstica."
-      - text: "Expliqueu què és l’estricció i en quin tram apareix."
-    solution: "Límit elàstic: màxim sense deformació permanent. Estricció: coll abans de la ruptura (després de l’UTS)."
+- id: Q004
+  statement: "Explica què és la complexitat temporal O(n) amb un exemple simple."
+  topic: "Algorísmia"
+  difficulty: "mitja"
+  answer: "O(n) vol dir que el temps creix linealment amb n; ex: recórrer una llista i sumar elements."
+
+- id: Q005
+  statement: "Què és una excepció i com es gestiona amb try/except?"
+  topic: "Errors"
+  difficulty: "mitja"
+  answer: "Una excepció és un error en execució; try/except captura l'error i permet reaccionar sense petar."
+
+- id: Q006
+  statement: "Què és una clau primària en una base de dades relacional?"
+  topic: "Bases de dades"
+  difficulty: "mitja"
+  answer: "Camp(s) que identifiquen de manera única cada fila d'una taula."
+
+- id: Q007
+  statement: "Dona un exemple d'ús d'un diccionari (dict) i per què és útil."
+  topic: "Estructures de dades"
+  difficulty: "facil"
+  answer: "Ex: notes = {'Anna': 8}. Útil per mapar claus a valors amb accés ràpid."
+
+- id: Q008
+  statement: "Què és una API? Explica-ho amb una frase i un exemple."
+  topic: "Xarxes i serveis"
+  difficulty: "dificil"
+  answer: "Interfície per comunicar sistemes; ex: una API HTTP de temps que retorna JSON."
+
+- id: Q009
+  statement: "Què és un bucle `for` i quan l'utilitzaries?"
+  topic: "Control de flux"
+  difficulty: "facil"
+  answer: "Repeteix un bloc per a cada element d'un iterable; ex: recórrer una llista."
+
+- id: Q010
+  statement: "Què és una funció i quins avantatges té?"
+  topic: "Fonaments"
+  difficulty: "facil"
+  answer: "Bloc reutilitzable de codi; millora modularitat, reutilització i llegibilitat."
