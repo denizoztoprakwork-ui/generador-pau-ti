@@ -1,0 +1,37 @@
+questions:
+  - id: elec_ohm_01
+    topic: electricitat
+    title: Circuit resistiu en sèrie
+    statement: "Considereu un circuit amb dues resistències en sèrie."
+    parts:
+      - text: "Per a R1=220 Ω i R2=330 Ω, calculeu la resistència equivalent."
+      - text: "Si s’aplica una tensió de 12 V, calculeu la intensitat del circuit."
+      - text: "Determineu la potència dissipada total."
+    solution: "Req=550 Ω. I=12/550=0,0218 A. P=V·I=0,2616 W."
+
+  - id: mec_trac_01
+    topic: mecanica
+    title: Tracció i deformació
+    statement: "Una barra cilíndrica d’acer està sotmesa a tracció."
+    parts:
+      - text: "Si F=12 kN i el diàmetre és 10 mm, calculeu la tensió σ."
+      - text: "Amb E=210 GPa, estimeu la deformació unitària ε."
+    solution: "A=π(0,01^2)/4=7,85e-5. σ=12000/7,85e-5=153 MPa. ε≈7,3e-4."
+
+  - id: ctrl_bloc_01
+    topic: sistemes
+    title: Sistema en llaç tancat
+    statement: "Considereu un sistema de control amb retroalimentació unitària."
+    parts:
+      - text: "Expliqueu la funció del comparador i del sensor en un llaç tancat."
+      - text: "Indiqueu dos avantatges d’un sistema amb retroacció respecte d’un en llaç obert."
+    solution: "Comparador: e=r-y. Sensor: mesura y. Avantatges: rebuig pertorbacions i menys sensibilitat a variacions."
+
+  - id: mat_fase_01
+    topic: materials
+    title: Corba esforç-deformació
+    statement: "Es mostra (conceptualment) una corba esforç-deformació d’un metall dúctil."
+    parts:
+      - text: "Definiu límit elàstic i zona plàstica."
+      - text: "Expliqueu què és l’estricció i en quin tram apareix."
+    solution: "Límit elàstic: màxim sense deformació permanent. Estricció: coll abans de la ruptura (després de l’UTS)."
