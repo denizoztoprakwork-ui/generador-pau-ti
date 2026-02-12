@@ -1,59 +1,165 @@
-- id: Q001
-  statement: "Què és una variable en programació? Escriu una definició breu."
-  topic: "Fonaments"
+- id: ELEC_001
+  statement: |
+    (Circuit DC) En un circuit hi ha una resistència de 12 Ω connectada a una font de 9 V.
+    a) Calcula la intensitat que circula pel circuit.
+    b) Calcula la potència dissipada a la resistència.
+  topic: "Electricitat"
   difficulty: "facil"
-  answer: "Una variable és un identificador que referencia un valor emmagatzemat (que pot canviar) durant l'execució."
+  answer: |
+    a) I = V/R = 9/12 = 0,75 A
+    b) P = V·I = 9·0,75 = 6,75 W (també P = V²/R = 81/12 = 6,75 W)
 
-- id: Q002
-  statement: "Dona un exemple de condicional `if` en Python i explica què fa."
-  topic: "Control de flux"
+- id: ELEC_002
+  statement: |
+    (Associació de resistències) Dues resistències de 10 Ω i 20 Ω estan:
+    a) en sèrie, i
+    b) en paral·lel.
+    Calcula la resistència equivalent en cada cas.
+  topic: "Electricitat"
   difficulty: "facil"
-  answer: "Ex: if x > 0: print('positiu'). Executa el bloc si la condició és certa."
+  answer: |
+    a) Sèrie: Req = 10 + 20 = 30 Ω
+    b) Paral·lel: 1/Req = 1/10 + 1/20 = 0,1 + 0,05 = 0,15 → Req = 6,67 Ω
 
-- id: Q003
-  statement: "Quina diferència hi ha entre una llista i una tupla en Python?"
-  topic: "Estructures de dades"
+- id: ELEC_003
+  statement: |
+    (Llei d'Ohm amb divisor de tensió) Tens dues resistències en sèrie R1=2 kΩ i R2=3 kΩ connectades a 10 V.
+    a) Calcula la intensitat del circuit.
+    b) Calcula la tensió a R2.
+  topic: "Electricitat"
   difficulty: "mitja"
-  answer: "La llista és mutable; la tupla és immutable."
+  answer: |
+    a) Req = 5 kΩ → I = 10/5000 = 0,002 A = 2 mA
+    b) VR2 = I·R2 = 0,002·3000 = 6 V (divisor: 10·3/5=6 V)
 
-- id: Q004
-  statement: "Explica què és la complexitat temporal O(n) amb un exemple simple."
-  topic: "Algorísmia"
+- id: ELEC_004
+  statement: |
+    (Energia i cost) Un aparell de 1200 W funciona 2 hores al dia durant 30 dies.
+    a) Calcula l'energia consumida en kWh.
+    b) Si el preu és 0,20 €/kWh, quin cost té?
+  topic: "Energia"
   difficulty: "mitja"
-  answer: "O(n) vol dir que el temps creix linealment amb n; ex: recórrer una llista i sumar elements."
+  answer: |
+    a) 1,2 kW · (2 h/dia · 30 dies) = 1,2 · 60 = 72 kWh
+    b) Cost = 72 · 0,20 = 14,40 €
 
-- id: Q005
-  statement: "Què és una excepció i com es gestiona amb try/except?"
-  topic: "Errors"
-  difficulty: "mitja"
-  answer: "Una excepció és un error en execució; try/except captura l'error i permet reaccionar sense petar."
-
-- id: Q006
-  statement: "Què és una clau primària en una base de dades relacional?"
-  topic: "Bases de dades"
-  difficulty: "mitja"
-  answer: "Camp(s) que identifiquen de manera única cada fila d'una taula."
-
-- id: Q007
-  statement: "Dona un exemple d'ús d'un diccionari (dict) i per què és útil."
-  topic: "Estructures de dades"
-  difficulty: "facil"
-  answer: "Ex: notes = {'Anna': 8}. Útil per mapar claus a valors amb accés ràpid."
-
-- id: Q008
-  statement: "Què és una API? Explica-ho amb una frase i un exemple."
-  topic: "Xarxes i serveis"
+- id: ELEC_005
+  statement: |
+    (Bateria i rendiment) Un motor consumeix 3 A a 12 V durant 15 minuts.
+    a) Calcula l'energia elèctrica consumida (en Wh).
+    b) Si el rendiment del motor és del 70%, quina energia mecànica útil entrega?
+  topic: "Energia"
   difficulty: "dificil"
-  answer: "Interfície per comunicar sistemes; ex: una API HTTP de temps que retorna JSON."
+  answer: |
+    a) P = V·I = 12·3 = 36 W. Temps = 15 min = 0,25 h → E = 36·0,25 = 9 Wh
+    b) E_útil = 0,70 · 9 = 6,3 Wh
 
-- id: Q009
-  statement: "Què és un bucle `for` i quan l'utilitzaries?"
-  topic: "Control de flux"
-  difficulty: "facil"
-  answer: "Repeteix un bloc per a cada element d'un iterable; ex: recórrer una llista."
+- id: ELEC_006
+  statement: |
+    (Diode/LED) Un LED té una caiguda de tensió de 2,0 V i el volem fer funcionar a 15 mA amb una font de 9 V.
+    a) Quin valor aproximat ha de tenir la resistència en sèrie?
+    b) Quina potència dissiparà aquesta resistència?
+  topic: "Electrònica"
+  difficulty: "mitja"
+  answer: |
+    a) VR = 9 - 2 = 7 V. R = VR/I = 7/0,015 ≈ 467 Ω → comercial: 470 Ω
+    b) P = VR·I = 7·0,015 = 0,105 W → 1/4 W OK
 
-- id: Q010
-  statement: "Què és una funció i quins avantatges té?"
-  topic: "Fonaments"
+- id: LOG_001
+  statement: |
+    (Lògica) Escriu l'expressió booleana i la taula de veritat d'un sistema d'alarma que s'activa si:
+    - hi ha moviment (M) i és de nit (N), o bé
+    - s'obre la porta (P).
+  topic: "Automàtica i lògica"
+  difficulty: "mitja"
+  answer: |
+    Expressió: A = (M · N) + P
+    Taula: A=1 quan P=1 o (M=1 i N=1). En la resta, A=0.
+
+- id: LOG_002
+  statement: |
+    (Portes lògiques) Simplifica l'expressió:
+    F = A·B + A·B'
+    (on B' és la negació de B).
+  topic: "Automàtica i lògica"
+  difficulty: "mitja"
+  answer: |
+    F = A·(B + B') = A·1 = A
+
+- id: PLC_001
+  statement: |
+    (PLC - enunciat tipus) Un motor (M) s'encén prement START (S) i s'apaga prement STOP (T).
+    STOP és un polsador normalment tancat (NC) i START és normalment obert (NO).
+    a) Dibuixa/explica el circuit d'auto-manteniment.
+    b) Escriu la lògica en forma d'expressió.
+  topic: "PLC"
+  difficulty: "dificil"
+  answer: |
+    a) Auto-manteniment: contacte STOP (NC) en sèrie amb (START (NO) en paral·lel amb contacte auxiliar de M).
+    b) M = T · (S + M) (on T=1 quan STOP no està premut)
+
+- id: DT_001
+  statement: |
+    (Dibuix tècnic) Explica què és:
+    a) una vista en alçat,
+    b) una vista en planta,
+    c) una secció.
+    Indica quan s'utilitza una secció.
+  topic: "Dibuix tècnic"
   difficulty: "facil"
-  answer: "Bloc reutilitzable de codi; millora modularitat, reutilització i llegibilitat."
+  answer: |
+    a) Alçat: vista frontal.
+    b) Planta: vista superior.
+    c) Secció: representació tallant la peça per veure l'interior.
+    S'utilitza per mostrar detalls interns que no es veuen amb vistes normals.
+
+- id: MAT_001
+  statement: |
+    (Materials) Compara acer, alumini i plàstic (termoplàstic) en:
+    a) densitat,
+    b) resistència mecànica,
+    c) corrosió,
+    d) reciclabilitat.
+  topic: "Materials"
+  difficulty: "mitja"
+  answer: |
+    Acer: densitat alta, alta resistència, pot corroir (òxid), reciclable.
+    Alumini: densitat baixa-mitja, bona resistència/pes, bona resistència a corrosió (òxid protector), molt reciclable.
+    Termoplàstic: densitat baixa, resistència menor, no corrosió, reciclabilitat depèn del tipus (en general possible).
+
+- id: FAB_001
+  statement: |
+    (Processos) Indica un procés adequat i justifica breument per fabricar:
+    a) una peça metàl·lica amb forma complexa (moltes corbes),
+    b) un eix cilíndric metàl·lic de precisió,
+    c) una carcassa de plàstic per a un comandament.
+  topic: "Processos de fabricació"
+  difficulty: "mitja"
+  answer: |
+    a) Fosa / injecció de metall o impressió 3D metàl·lica: admet formes complexes.
+    b) Tornejat (i si cal rectificat): alta precisió en peces cilíndriques.
+    c) Injecció de plàstic: ràpid i barat en sèries, bona qualitat superficial.
+
+- id: TIC_001
+  statement: |
+    (Sistemes de numeració) Converteix:
+    a) 45 (decimal) a binari,
+    b) 101101 (binari) a decimal.
+  topic: "TIC"
+  difficulty: "facil"
+  answer: |
+    a) 45 = 32+8+4+1 → 101101
+    b) 101101 = 32+8+4+1 = 45
+
+- id: TIC_002
+  statement: |
+    (Xarxes) Explica la diferència entre:
+    a) adreça IP i adreça MAC,
+    b) router i switch.
+  topic: "TIC"
+  difficulty: "mitja"
+  answer: |
+    IP: adreça lògica per enrutar a la xarxa; pot canviar.
+    MAC: adreça física de la targeta de xarxa; normalment fixa.
+    Router: connecta xarxes diferents (encamina IP).
+    Switch: connecta dispositius dins d'una LAN (commuta trames per MAC).
