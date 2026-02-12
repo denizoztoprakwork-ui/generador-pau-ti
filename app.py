@@ -223,7 +223,8 @@ with col1:
     if st.button("Genera examen (PDF)"):
         try:
 try:
-    exam = generate_exam(
+exam = generate_exam(...)
+
         bank,
         seed=seed if seed_mode == "Fixar seed" else random.randint(0, 999999),
         n_exercises=int(n_exercises),
